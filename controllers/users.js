@@ -17,15 +17,7 @@ const { id, active = true } = req.query;
 const usersPost = async(req, res = response) => {
     
     const {name, email, password, role} = req.body;
-    const user = new User({name, email, password, role});
-
-    // Verify if email exists
-    const emailExists = await User.findOne({email});
-    if (emailExists) {
-        return res.status(400).json({
-            msg: 'Email already exists'
-        });
-    }    
+    const user = new User({name, email, password, role}); 
 
     // Encrypt password
     const salt = bcryptjs.genSaltSync();
@@ -35,7 +27,6 @@ const usersPost = async(req, res = response) => {
     await user.save();
 
     res.json({
-        msg: "post API - controller",
         user
     });
 }

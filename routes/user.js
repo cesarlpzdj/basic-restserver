@@ -1,8 +1,11 @@
 const { Router } = require('express');
 const { check } = require('express-validator');
 
-const Role = require('../models/role');
 const { validateFields} = require('../middlewares/field-validations');
+const { 
+    roleIsValid, 
+    emailExists 
+} = require('../helpers/db-validators');
 
 const { 
     usersGet, 
@@ -12,20 +15,17 @@ const {
     usersPatch 
 } = require('../controllers/users');
 
-
 const router = Router();
 router.get('/', usersGet);
 router.post('/', [
+    //check('role', 'Not a valid role').isIn(['ADMIN_ROLE', 'USER_ROLE']), validation against hardcoded values
+    //check('role', ).custom( (role) => roleIsValid(role) ) arrow function on custom callback can be simplified
+
     check('name', 'Name is mandatory').not().isEmpty(),
     check('email', 'Email is not valid').isEmail(),
+    check('email').custom(emailExists),
     check('password', 'Password must have 6 characters').isLength({ min: 6 }),
-    //check('role', 'Not a valid role').isIn(['ADMIN_ROLE', 'USER_ROLE']),
-    check('role', ).custom(async(role = '') => {
-        const roleExists = await Role.findOne({role});
-        if (!roleExists) {
-            throw new Error(`Role ${role} does not exist`);
-        }
-    }),
+    check('role', ).custom( roleIsValid ),
     validateFields
 ],usersPost);
 
