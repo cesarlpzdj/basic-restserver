@@ -4,14 +4,20 @@ const bcryptjs = require('bcryptjs');
 const User = require('../models/user');
 const { validationResult } = require('express-validator');
 
-const usersGet = (req = request, res = response) => {
-const { id, active = true } = req.query;
+const usersGet = async(req = request, res = response) => {
+    //const { id, active = true } = req.query;
+    const { limit = 5, from = 0 } = req.query;
+    const condition = { state: true };
 
-    res.json({
-        msg: "get API - controller",
-        id,
-        active
-    });
+    //Promise.all allows us to execute the two non related queries so we can save time.
+    const [users, total] = await Promise.all([
+        User.find(condition)
+            .limit(Number(limit))
+            .skip(Number(from)),
+        User.countDocuments(condition)
+    ]);
+
+    res.json({ total, users });
 }
 
 const usersPost = async(req, res = response) => {
@@ -31,23 +37,32 @@ const usersPost = async(req, res = response) => {
     });
 }
 
-const usersPut = (req, res = response) => {
+const usersPut = async(req, res = response) => {
     const { id } = req.params;
-    res.json({
-        msg: "put API - controller",
-        id
-    });
+    const { _id, password, google, email, ...resto } = req.body;
+
+    //TODO: validate against db
+
+    if (password) {
+        // Encrypt password
+        const salt = bcryptjs.genSaltSync();
+        resto.password = bcryptjs.hashSync(password, salt);
+    }
+    
+    const user = await User.findByIdAndUpdate(id, resto, { new: true });
+
+    res.json(user);
 }
 
 const usersDelete = (req, res = response) => {
     res.json({
-        msg: "delete API - controller"
+        msg: "delete API - usersDelete"
     });
 }
 
 const usersPatch = (req, res = response) => {
     res.json({
-        msg: "patch API - controller"
+        msg: "patch API - usersPatch"
     });
 }
 
